@@ -1,0 +1,59 @@
+name: T-Mobile FCC Gemini Agent
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 2,9 * * *"
+      timezone: "America/Los_Angeles"
+
+permissions:
+  contents: write
+
+concurrency:
+  group: tmobile-fcc-agent
+  cancel-in-progress: false
+
+jobs:
+  investigate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          fetch-depth: 1
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: python -m pip install -r requirements.txt
+
+      - name: Run Gemini agent
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+          GEMINI_MODEL: gemini-3.8-flash
+        run: python fcc_agent.py
+
+      - name: Save successful tracking history
+        run: |
+          if [ ! -f agent_history.json ]; then
+            echo "Agent did not create its tracking file."
+            exit 1
+          fi
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+          git add agent_history.json
+
+          if git diff --cached --quiet; then
+            echo "No tracking-file changes to save."
+          else
+            git commit -m "Update public FCC agent history"
+            git push origin "HEAD:${{ github.event.repository.default_branch }}"
+          fi

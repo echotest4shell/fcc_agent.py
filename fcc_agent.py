@@ -15,7 +15,7 @@ from google.genai import types
 GRANTEE = "2ASXC"
 START_URL = f"https://fccid.io/{GRANTEE}"
 STATE_FILE = Path("agent_history.json")
-MODEL = os.getenv("GEMINI_MODEL", "gemini-3.8-flash")
+MODEL = os.getenv("GEMINI_MODEL", "gemini-3.5-flash-lite")
 
 MAX_PAGES = 8
 MAX_PAGE_BYTES = 1_500_000

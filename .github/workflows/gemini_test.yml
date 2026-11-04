@@ -20,7 +20,7 @@ jobs:
       - name: Install Google SDK
         run: pip install "google-genai>=1.0.0,<2.0.0"
 
-      - name: Ask Gemini to say OK
+      - name: Search for Real Madrid result
         env:
           GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
         run: |
@@ -34,12 +34,35 @@ jobs:
               http_options=types.HttpOptions(timeout=60000),
           )
 
-          print("Sending a tiny request. No tools or website involved.")
+          print("Asking Gemini to search for Real Madrid's result...", flush=True)
 
           response = client.models.generate_content(
               model="gemini-3.8-flash",
-              contents="Reply with only the word OK.",
+              contents=(
+                  "Use Google Search to check Real Madrid men's first-team "
+                  "football match on November 4, 2026, using the Madrid "
+                  "local calendar date. "
+                  "Return the opponent, competition, match status, score, "
+                  "and goalscorers in a small table. "
+                  "If the match is live, label the score as live. "
+                  "If it has not started, say so. "
+                  "If there is no match that day, say that clearly "
+                  "instead of substituting a different day's result. "
+                  "Do not guess. Include source URLs."
+              ),
+              config=types.GenerateContentConfig(
+                  tools=[
+                      types.Tool(google_search=types.GoogleSearch())
+                  ],
+              ),
           )
 
-          print("Gemini replied:", response.text)
+          print("Gemini replied:", response.text, flush=True)
+
+          for candidate in response.candidates or []:
+              metadata = candidate.grounding_metadata
+              if metadata:
+                  for chunk in metadata.grounding_chunks or []:
+                      if chunk.web:
+                          print("Source:", chunk.web.uri, flush=True)
           PY

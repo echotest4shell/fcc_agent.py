@@ -1,0 +1,45 @@
+name: Gemini Connection Test
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4
+
+    steps:
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Google SDK
+        run: pip install "google-genai>=1.0.0,<2.0.0"
+
+      - name: Ask Gemini to say OK
+        env:
+          GEMINI_API_KEY: ${{ secrets.GEMINI_API_KEY }}
+        run: |
+          python -u - <<'PY'
+          import os
+          from google import genai
+          from google.genai import types
+
+          client = genai.Client(
+              api_key=os.environ["GEMINI_API_KEY"],
+              http_options=types.HttpOptions(timeout=60000),
+          )
+
+          print("Sending a tiny request. No tools or website involved.")
+
+          response = client.models.generate_content(
+              model="gemini-3.8-flash",
+              contents="Reply with only the word OK.",
+          )
+
+          print("Gemini replied:", response.text)
+          PY

@@ -391,7 +391,7 @@ def main():
     if not api_key:
         raise RuntimeError("GEMINI_API_KEY secret is missing.")
 
-     client = genai.Client(
+    client = genai.Client(
         api_key=api_key,
         http_options=types.HttpOptions(
             timeout=120_000,
